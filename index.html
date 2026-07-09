@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PyAuto — open-source astronomy &amp; Bayesian inference software</title>
+<meta name="description" content="The PyAuto software stack: PyAutoFit (probabilistic programming), PyAutoGalaxy (galaxy morphology) and PyAutoLens (strong gravitational lensing), accelerated by JAX on GPUs.">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-alt: #f6f6fa;
+    --text: #1c1e26;
+    --text-soft: #555a6e;
+    --line: #e4e4ee;
+    --brand: #7c4dff;
+    --fit: #e0700e;
+    --galaxy: #0d9488;
+    --lens: #7c4dff;
+    --card-bg: #ffffff;
+    --code-bg: #f0f0f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14151a;
+      --bg-alt: #1b1d24;
+      --text: #e8e8ef;
+      --text-soft: #a0a4b8;
+      --line: #2a2d38;
+      --brand: #9d7aff;
+      --fit: #f28c38;
+      --galaxy: #2dd4bf;
+      --lens: #9d7aff;
+      --card-bg: #1b1d24;
+      --code-bg: #23252e;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  a { color: var(--brand); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 0 1.25rem; }
+
+  header.hero {
+    padding: 4.5rem 0 3.5rem;
+    text-align: center;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% -10%, color-mix(in srgb, var(--brand) 18%, transparent), transparent),
+      var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+  .hero h1 {
+    font-size: clamp(2.4rem, 6vw, 3.6rem);
+    letter-spacing: -0.02em;
+    font-weight: 800;
+  }
+  .hero h1 .py { color: var(--text-soft); font-weight: 600; }
+  .hero p.tag {
+    max-width: 46rem;
+    margin: 1.1rem auto 0;
+    font-size: 1.15rem;
+    color: var(--text-soft);
+  }
+  .hero .cta { margin-top: 1.8rem; display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-block;
+    padding: 0.55rem 1.15rem;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .btn:hover { border-color: var(--brand); text-decoration: none; }
+  .btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .btn.primary:hover { filter: brightness(1.08); }
+
+  section { padding: 3rem 0; }
+  section h2 { font-size: 1.6rem; letter-spacing: -0.01em; margin-bottom: 0.4rem; }
+  section p.lead { color: var(--text-soft); max-width: 44rem; margin-bottom: 2rem; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.1rem; }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 1.4rem 1.4rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    border-top: 3px solid var(--accent, var(--brand));
+  }
+  .card h3 { font-size: 1.25rem; margin-bottom: 0.35rem; }
+  .card h3 a { color: var(--text); }
+  .card .dot { display: inline-block; width: 0.6em; height: 0.6em; border-radius: 50%; background: var(--accent, var(--brand)); margin-right: 0.45em; }
+  .card p { color: var(--text-soft); font-size: 0.95rem; flex: 1; }
+  .card .links { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; font-size: 0.9rem; font-weight: 600; }
+  .card code.pip {
+    display: block;
+    margin-top: 0.9rem;
+    background: var(--code-bg);
+    border-radius: 6px;
+    padding: 0.45rem 0.7rem;
+    font-size: 0.85rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--text);
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .fit    { --accent: var(--fit); }
+  .galaxy { --accent: var(--galaxy); }
+  .lens   { --accent: var(--lens); }
+
+  .alt { background: var(--bg-alt); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+
+  .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.1rem; }
+  .mini {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 1.2rem 1.3rem;
+  }
+  .mini h3 { font-size: 1.05rem; margin-bottom: 0.3rem; }
+  .mini p { color: var(--text-soft); font-size: 0.92rem; }
+  .mini .links { margin-top: 0.7rem; font-size: 0.9rem; font-weight: 600; display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; }
+
+  footer {
+    padding: 2.5rem 0 3rem;
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    text-align: center;
+  }
+  footer .links { margin-bottom: 0.6rem; display: flex; justify-content: center; gap: 1.2rem; flex-wrap: wrap; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1><span class="py">Py</span>Auto</h1>
+    <p class="tag">
+      Open-source software for astronomy and Bayesian inference: compose and fit
+      probabilistic models, measure galaxy morphology, and model strong
+      gravitational lenses — accelerated by JAX on GPUs.
+    </p>
+    <div class="cta">
+      <a class="btn primary" href="https://pyautolens.readthedocs.io/en/latest/">Get started with PyAutoLens</a>
+      <a class="btn" href="https://github.com/PyAutoLabs">GitHub organisation</a>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2>The stack</h2>
+    <p class="lead">
+      Three packages, one design: each layer is usable on its own, and each builds
+      on the one before it.
+    </p>
+    <div class="cards">
+      <div class="card fit">
+        <h3><span class="dot"></span><a href="https://pyautofit.readthedocs.io/en/latest/">PyAutoFit</a></h3>
+        <p>
+          A probabilistic programming language for model composition and fitting:
+          build models from Python classes, fit them with nested sampling, MCMC or
+          maximum-likelihood searches, and manage large fitting campaigns with
+          databases and graphical models.
+        </p>
+        <div class="links">
+          <a href="https://pyautofit.readthedocs.io/en/latest/">Docs</a>
+          <a href="https://github.com/PyAutoLabs/PyAutoFit">GitHub</a>
+          <a href="https://github.com/PyAutoLabs/autofit_workspace">Examples</a>
+          <a href="https://github.com/PyAutoLabs/HowToFit">HowToFit course</a>
+        </div>
+        <code class="pip">pip install autofit</code>
+      </div>
+      <div class="card galaxy">
+        <h3><span class="dot"></span><a href="https://pyautogalaxy.readthedocs.io/en/latest/">PyAutoGalaxy</a></h3>
+        <p>
+          Galaxy morphology and structure: light and mass profiles,
+          multi-wavelength imaging and interferometry, and automated fitting of
+          large galaxy samples — from parametric profiles to pixelised
+          reconstructions.
+        </p>
+        <div class="links">
+          <a href="https://pyautogalaxy.readthedocs.io/en/latest/">Docs</a>
+          <a href="https://github.com/PyAutoLabs/PyAutoGalaxy">GitHub</a>
+          <a href="https://github.com/PyAutoLabs/autogalaxy_workspace">Examples</a>
+          <a href="https://github.com/PyAutoLabs/HowToGalaxy">HowToGalaxy course</a>
+        </div>
+        <code class="pip">pip install autogalaxy</code>
+      </div>
+      <div class="card lens">
+        <h3><span class="dot"></span><a href="https://pyautolens.readthedocs.io/en/latest/">PyAutoLens</a></h3>
+        <p>
+          Strong gravitational lensing: ray-tracing, lens modeling and source
+          reconstruction for imaging, interferometry and point sources, built for
+          the large lens samples of Euclid, Rubin and the SKA.
+        </p>
+        <div class="links">
+          <a href="https://pyautolens.readthedocs.io/en/latest/">Docs</a>
+          <a href="https://github.com/PyAutoLabs/PyAutoLens">GitHub</a>
+          <a href="https://github.com/PyAutoLabs/autolens_workspace">Examples</a>
+          <a href="https://github.com/PyAutoLabs/HowToLens">HowToLens course</a>
+        </div>
+        <code class="pip">pip install autolens</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>Learn and drive PyAuto with AI</h2>
+    <p class="lead">
+      Alongside the documentation and tutorial courses, AI is a first-class way to
+      use PyAuto.
+    </p>
+    <div class="two-col">
+      <div class="mini">
+        <h3>Ask an AI assistant</h3>
+        <p>
+          Point ChatGPT or Claude at the
+          <a href="https://github.com/PyAutoLabs/autolens_assistant">autolens_assistant</a>
+          repository and ask your question — it gives the assistant curated,
+          up-to-date knowledge of the API, the scientific methods and worked
+          analysis recipes.
+        </p>
+      </div>
+      <div class="mini">
+        <h3>Run it with an agentic coding tool</h3>
+        <p>
+          Agentic tools such as Claude Code or Codex can run PyAuto end-to-end on
+          your machine: set up an analysis, fit models, and interpret results,
+          using the same assistant repository as their guide.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Try it in the browser</h2>
+    <p class="lead">
+      No installation needed — the introductory notebooks run on Google Colab.
+    </p>
+    <div class="two-col">
+      <div class="mini">
+        <h3>PyAutoLens on Colab</h3>
+        <p>Model your first strong gravitational lens in a browser notebook.</p>
+        <div class="links">
+          <a href="https://colab.research.google.com/github/PyAutoLabs/autolens_workspace/blob/main/notebooks/imaging/start_here.ipynb">Open the start-here notebook</a>
+        </div>
+      </div>
+      <div class="mini">
+        <h3>Tutorial courses</h3>
+        <p>
+          Lecture-style Jupyter courses teach each package from first principles:
+          statistics and model fitting, galaxy structure, and strong lensing.
+        </p>
+        <div class="links">
+          <a href="https://github.com/PyAutoLabs/HowToFit">HowToFit</a>
+          <a href="https://github.com/PyAutoLabs/HowToGalaxy">HowToGalaxy</a>
+          <a href="https://github.com/PyAutoLabs/HowToLens">HowToLens</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="links">
+      <a href="https://github.com/PyAutoLabs">GitHub</a>
+      <a href="https://pyautofit.readthedocs.io/en/latest/">PyAutoFit docs</a>
+      <a href="https://pyautogalaxy.readthedocs.io/en/latest/">PyAutoGalaxy docs</a>
+      <a href="https://pyautolens.readthedocs.io/en/latest/">PyAutoLens docs</a>
+      <a href="https://github.com/PyAutoLabs/PyAutoLens/blob/main/CITATIONS.md">Citing PyAuto</a>
+    </div>
+    <div>PyAuto is developed by James Nightingale, Richard Hayes and contributors, and is free and open source.</div>
+  </div>
+</footer>
+
+</body>
+</html>
