@@ -34,6 +34,7 @@ duplicating it.
 - **Support light and dark** via `prefers-color-scheme`, matching the existing
   page.
 
+<!-- repos_sync:history:begin -->
 ## Never rewrite history
 
 NEVER perform these operations on any repo with a remote:
@@ -51,3 +52,10 @@ If the working tree needs a clean state, the **only** correct sequence is:
     git fetch origin
     git reset --hard origin/main
     git clean -fd
+
+This applies equally to humans, local Claude Code, cloud Claude agents, Codex,
+and any other agent. The "Initial commit — fresh start for AI workflow" pattern
+that appeared independently on origin and local for three workspace repos is
+exactly what this rule prevents — it costs ~40 commits of redundant local work
+every time it happens.
+<!-- repos_sync:history:end -->
