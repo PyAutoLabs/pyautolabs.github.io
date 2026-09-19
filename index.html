@@ -45,6 +45,17 @@
   a:hover { text-decoration: underline; }
   .wrap { max-width: 1060px; margin: 0 auto; padding: 0 1.25rem; }
 
+  nav { border-bottom: 1px solid var(--line); background: var(--bg); }
+  nav .wrap {
+    min-height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  nav .home { color: var(--text); font-weight: 750; }
+  nav .links { display: flex; gap: 1.1rem; font-size: 0.95rem; font-weight: 600; }
+
   header.hero {
     padding: 4.5rem 0 3.5rem;
     text-align: center;
@@ -138,7 +149,17 @@
 </head>
 <body>
 
-<header class="hero">
+<nav aria-label="Main navigation">
+  <div class="wrap">
+    <a class="home" href="#top">PyAutoLabs</a>
+    <div class="links">
+      <a href="#stack">Software</a>
+      <a href="#community">Community</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
   <div class="wrap">
     <h1><span class="py">Py</span>Auto</h1>
     <p class="tag">
@@ -153,7 +174,7 @@
   </div>
 </header>
 
-<section>
+<section id="stack">
   <div class="wrap">
     <h2>The stack</h2>
     <p class="lead">
@@ -244,48 +265,6 @@
 
 <section>
   <div class="wrap">
-    <h2>PyAutoScientist — the AI dev organism behind PyAuto</h2>
-    <p class="lead">
-      PyAuto is developed by an organism of specialised repositories — Brain,
-      Mind, Cortex, Memory, Heart, Hands, Nerves and Gut — in which AI agents
-      plan,
-      implement, test and release the software, with a human checkpointing the
-      judgment calls.
-      It is open, documented, and built to be forked.
-    </p>
-    <div class="two-col">
-      <div class="mini">
-        <h3>Read how it works</h3>
-        <p>
-          The organs and their boundaries, the specialist agents, the health
-          gate, and the development workflow — documented against the live,
-          running system. The Cortex organ page covers the separate track
-          science runs and their verdicts move along, and its board is live.
-        </p>
-        <div class="links">
-          <a href="https://pyautoscientist.readthedocs.io">PyAutoScientist docs</a>
-          <a href="https://pyautoscientist.readthedocs.io/en/latest/organs/cortex.html">The Cortex organ</a>
-          <a href="https://pyautolabs.github.io/PyAutoCortex/">The Cortex board</a>
-          <a href="https://github.com/PyAutoLabs/PyAutoBrain">PyAutoBrain on GitHub</a>
-        </div>
-      </div>
-      <div class="mini">
-        <h3>Run your own</h3>
-        <p>
-          Fork the organs, replace a small set of declared config surfaces
-          with your own repositories, and drive projects that have nothing
-          to do with astronomy. The adoption guide is the walkthrough.
-        </p>
-        <div class="links">
-          <a href="https://pyautoscientist.readthedocs.io/en/latest/adoption/guide.html">Adoption guide</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="wrap">
     <h2>Try it in the browser</h2>
     <p class="lead">
       No installation needed — the introductory notebooks run on Google Colab.
@@ -314,10 +293,60 @@
   </div>
 </section>
 
+<section class="alt" id="community">
+  <div class="wrap">
+    <h2>Community</h2>
+    <p class="lead">
+      Questions, help with your code or your analysis, and ideas: the
+      <a href="https://github.com/orgs/PyAutoLabs/discussions">PyAutoLabs Discussions</a>.
+      Bug reports with a reproducer (a snippet, the traceback, your versions):
+      an issue on the library's tracker. The Slack is for collaborators, by
+      invitation.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>PyAutoScientist</h2>
+    <p class="lead">
+      PyAutoScientist is Jammy2211's experimental, vibe-coded AI software
+      development ecosystem. Visitors are welcome to explore how its specialist
+      agents help develop PyAuto, but contributors are not currently expected to
+      use it.
+    </p>
+    <div class="two-col">
+      <div class="mini">
+        <h3>Explore the experiment</h3>
+        <p>
+          The organs and their boundaries, specialist agents, health gate and
+          development workflow are documented against the live system.
+        </p>
+        <div class="links">
+          <a href="https://pyautoscientist.readthedocs.io">PyAutoScientist docs</a>
+          <a href="https://github.com/PyAutoLabs/PyAutoScientist">PyAutoScientist on GitHub</a>
+        </div>
+      </div>
+      <div class="mini">
+        <h3>See the system at work</h3>
+        <p>
+          The Cortex records science projects separately from software
+          development and publishes a live view of their runs and findings.
+        </p>
+        <div class="links">
+          <a href="https://pyautoscientist.readthedocs.io/en/latest/organs/cortex.html">The Cortex organ</a>
+          <a href="https://pyautolabs.github.io/PyAutoCortex/">The Cortex board</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
     <div class="links">
       <a href="https://github.com/PyAutoLabs">GitHub</a>
+      <a href="https://github.com/orgs/PyAutoLabs/discussions">Community</a>
       <a href="https://pyautofit.readthedocs.io/en/latest/">PyAutoFit docs</a>
       <a href="https://pyautogalaxy.readthedocs.io/en/latest/">PyAutoGalaxy docs</a>
       <a href="https://pyautolens.readthedocs.io/en/latest/">PyAutoLens docs</a>
