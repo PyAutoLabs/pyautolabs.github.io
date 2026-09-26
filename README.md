@@ -29,3 +29,7 @@ feeds are the truth.
   `headline`, `updated`, `pages_url`, `items[{severity, text, url, prompt}]`).
 - Adding an organ = one line in the `ORGANS` array at the top of
   `cockpit/index.html` (`feed: null` until it publishes).
+- The Gut's card reads the [Gut board](https://pyautolabs.github.io/PyAutoGut/)
+  feed: yellow when condemned refs are due for voiding (or orphaned /
+  dangling), and each due item links the board's one-tap "Void permanently"
+  issue. Eyes and Nerves stay grey (Nerves has no standing state, so no board).

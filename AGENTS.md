@@ -50,7 +50,9 @@ order (Brain, Mind, Cortex, Memory, Eyes, Heart, Hands, Nerves, Gut).
   from a `localStorage` copy.
 - **Adding an organ** is one line in the `ORGANS` array at the top of
   `cockpit/index.html`; use `feed: null` until the organ publishes a feed
-  (it renders as a grey "no feed yet" card).
+  (it renders as a grey "no feed yet" card). Publishing today: Brain, Mind, Cortex,
+  Memory, Heart, Hands and Gut (the Gut board, PyAutoGut#9); Eyes and Nerves
+  are `feed: null`.
 - **Self-contained, with two exceptions.** `cockpit/index.html` inlines all CSS
   and JS like the hub. `cockpit/manifest.webmanifest` and `cockpit/sw.js` are
   separate files because the web platform requires them to be: a manifest is
