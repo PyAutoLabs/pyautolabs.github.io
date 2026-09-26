@@ -32,4 +32,8 @@ feeds are the truth.
 - The Gut's card reads the [Gut board](https://pyautolabs.github.io/PyAutoGut/)
   feed: yellow when condemned refs are due for voiding (or orphaned /
   dangling), and each due item links the board's one-tap "Void permanently"
-  issue. Eyes and Nerves stay grey (Nerves has no standing state, so no board).
+  issue.
+- The Nerves' card reads the [Nerves board](https://pyautolabs.github.io/PyAutoNerves/)
+  feed (PyAutoNerves#172) — a read-only browser of every config file and option
+  across the libraries and workspaces: yellow when a config file does not parse
+  or a workspace sets keys no library defines. Eyes stays grey.
