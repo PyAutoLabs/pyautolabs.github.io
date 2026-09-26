@@ -13,3 +13,19 @@ Served by GitHub Pages at **https://pyautolabs.github.io**.
 
 Per-project documentation stays on ReadTheDocs (canonical URLs); this site is
 the cross-project landing layer only.
+
+## Cockpit
+
+`cockpit/` is an installable page (a PWA) at
+**https://pyautolabs.github.io/cockpit/** that reads every organ's live status
+feed — `https://pyautolabs.github.io/<Repo>/state.json` — and shows the Heart
+pinned first, then one card per organ in canonical order. It polls every 60 s,
+badges the app icon with the red-item count and, once the 🔔 is granted, sends a
+local notification when any organ's status changes. No server, no secrets: the
+feeds are the truth.
+
+- Feed contract: PyAutoBrain `board/state_schema.json` (v1:
+  `schema_version`, `organ`, `repo`, `status` ∈ green/yellow/red/stale/grey,
+  `headline`, `updated`, `pages_url`, `items[{severity, text, url, prompt}]`).
+- Adding an organ = one line in the `ORGANS` array at the top of
+  `cockpit/index.html` (`feed: null` until it publishes).

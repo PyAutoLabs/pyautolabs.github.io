@@ -22,6 +22,7 @@ duplicating it.
 - `RETROFIT.md` — how to move this hub and the docs onto paid custom domains
   later; the site intentionally runs on free infrastructure today.
 - `README.md` — this repo's own short summary.
+- `cockpit/` — the installable organ cockpit (see "Cockpit" below).
 
 ## Working here
 
@@ -33,6 +34,31 @@ duplicating it.
   repos; don't copy per-project documentation into this site.
 - **Support light and dark** via `prefers-color-scheme`, matching the existing
   page.
+
+## Cockpit
+
+`cockpit/` is the organ cockpit — an installable PWA at `/cockpit/` that reads
+each organ's `https://pyautolabs.github.io/<Repo>/state.json` (same origin as
+the page) and renders the Heart strip plus one card per organ in canonical
+order (Brain, Mind, Cortex, Memory, Eyes, Heart, Hands, Nerves, Gut).
+
+- **Contract:** PyAutoBrain `board/state_schema.json`, schema_version 1 —
+  `{schema_version, organ, repo, status ∈ green|yellow|red|stale|grey,
+  headline, updated, pages_url, items:[{severity ∈ red|yellow|info, text,
+  url|null, prompt|null}]}`. The page validates this minimally and shows
+  "bad feed" otherwise; a failed fetch shows "unreachable · last good <age>"
+  from a `localStorage` copy.
+- **Adding an organ** is one line in the `ORGANS` array at the top of
+  `cockpit/index.html`; use `feed: null` until the organ publishes a feed
+  (it renders as a grey "no feed yet" card).
+- **Self-contained, with two exceptions.** `cockpit/index.html` inlines all CSS
+  and JS like the hub. `cockpit/manifest.webmanifest` and `cockpit/sw.js` are
+  separate files because the web platform requires them to be: a manifest is
+  linked by URL, and a service worker must be a same-origin script file whose
+  path sets its scope. Icons stay inline as SVG data URIs — no binaries.
+- **Never cache the feeds.** `sw.js` caches only the page shell
+  (`/cockpit/`, `/cockpit/index.html`); bump its `CACHE` name when changing
+  that behaviour. No secrets (no ntfy topic) belong anywhere on this page.
 
 <!-- repos_sync:history:begin -->
 ## Never rewrite history

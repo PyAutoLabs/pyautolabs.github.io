@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PyAuto Cockpit</title>
+<meta name="description" content="One installable page reading every PyAuto organ's state.json feed: the Heart pinned first, a card per organ, a badge and a local notification on any status change.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#7c4dff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cockpit">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%237c4dff'/%3E%3Ccircle cx='32' cy='32' r='14' fill='none' stroke='%23fff' stroke-width='6'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-alt: #f6f6fa;
+    --text: #1c1e26;
+    --text-soft: #555a6e;
+    --line: #e4e4ee;
+    --brand: #7c4dff;
+    --card-bg: #ffffff;
+    --code-bg: #f0f0f6;
+    --green: #16a34a;
+    --yellow: #ca8a04;
+    --red: #dc2626;
+    --stale: #ea580c;
+    --grey: #9095a8;
+    --info: #3b82f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14151a;
+      --bg-alt: #1b1d24;
+      --text: #e8e8ef;
+      --text-soft: #a0a4b8;
+      --line: #2a2d38;
+      --brand: #9d7aff;
+      --card-bg: #1b1d24;
+      --code-bg: #23252e;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --red: #f87171;
+      --stale: #fb923c;
+      --grey: #6b7085;
+      --info: #60a5fa;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  a { color: var(--brand); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 1rem; }
+
+  nav { border-bottom: 1px solid var(--line); background: var(--bg); position: sticky; top: 0; z-index: 2; }
+  nav .wrap { min-height: 3.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  nav .home { color: var(--text); font-weight: 750; }
+  nav .home span { color: var(--text-soft); font-weight: 600; }
+  nav .right { display: flex; align-items: center; gap: 0.8rem; font-size: 0.95rem; font-weight: 600; }
+  .overall { display: inline-flex; align-items: center; gap: 0.4em; }
+  .overall .count { color: var(--red); }
+  button.bell {
+    border: 1px solid var(--line); background: var(--card-bg); color: var(--text);
+    border-radius: 8px; padding: 0.3rem 0.6rem; font: inherit; font-size: 0.95rem; cursor: pointer;
+  }
+  button.bell:hover { border-color: var(--brand); }
+  button.bell.on { border-color: var(--green); }
+
+  .dot { display: inline-block; width: 0.65em; height: 0.65em; border-radius: 50%; background: var(--st, var(--grey)); flex: none; }
+  .s-green  { --st: var(--green); }
+  .s-yellow { --st: var(--yellow); }
+  .s-red    { --st: var(--red); }
+  .s-stale  { --st: var(--stale); }
+  .s-grey   { --st: var(--grey); }
+  .sev-info { --st: var(--info); }
+  .word { font-weight: 700; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.04em; color: var(--st, var(--grey)); }
+
+  main { padding: 1.2rem 0 2.5rem; }
+  .heart {
+    background: var(--bg-alt); border: 1px solid var(--line); border-left: 6px solid var(--st, var(--grey));
+    border-radius: 12px; padding: 1rem 1.2rem; margin-bottom: 1.2rem; transition: box-shadow 0.2s;
+  }
+  .heart.flash { animation: flash 0.6s ease-in-out 5; }
+  @keyframes flash { 50% { box-shadow: 0 0 0 4px var(--st, var(--brand)); border-color: var(--st, var(--brand)); } }
+  .heart h2 { font-size: 1.15rem; display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; }
+  .heart .headline { font-size: 1.05rem; margin: 0.2rem 0 0.4rem; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+  .card {
+    background: var(--card-bg); border: 1px solid var(--line); border-radius: 12px;
+    padding: 1rem 1.1rem 0.9rem; display: flex; flex-direction: column;
+    border-top: 3px solid var(--st, var(--grey)); min-width: 0;
+  }
+  .card h3 { font-size: 1.1rem; display: flex; align-items: center; gap: 0.5em; }
+  .card h3 .word { margin-left: auto; }
+  .headline { margin: 0.35rem 0 0.2rem; overflow-wrap: anywhere; }
+  .meta { color: var(--text-soft); font-size: 0.82rem; }
+  .meta .warn { color: var(--stale); font-weight: 600; }
+  ul.items { list-style: none; margin: 0.6rem 0 0.2rem; display: flex; flex-direction: column; gap: 0.35rem; flex: 1; }
+  ul.items li { display: flex; align-items: flex-start; gap: 0.45rem; font-size: 0.88rem; }
+  ul.items li .dot { margin-top: 0.42em; width: 0.55em; height: 0.55em; }
+  ul.items li .t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  ul.items li.more { color: var(--text-soft); font-size: 0.82rem; padding-left: 1rem; }
+  .card .foot { margin-top: 0.7rem; font-size: 0.88rem; font-weight: 600; }
+  .empty { color: var(--text-soft); font-size: 0.9rem; margin-top: 0.4rem; }
+
+  button.copy {
+    flex: none; width: 2rem; height: 1.7rem; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--code-bg); color: var(--text); cursor: pointer; font-size: 0.85rem; line-height: 1;
+  }
+  button.copy:hover { border-color: var(--brand); }
+  button.copy.ok { border-color: var(--green); color: var(--green); }
+
+  footer { color: var(--text-soft); font-size: 0.85rem; text-align: center; padding: 0 0 2.5rem; }
+  footer p + p { margin-top: 0.3rem; }
+</style>
+</head>
+<body>
+
+<nav aria-label="Cockpit navigation">
+  <div class="wrap">
+    <a class="home" href="/">PyAutoLabs <span>/ Cockpit</span></a>
+    <div class="right">
+      <span class="overall" id="overall"><span class="dot"></span><span class="word">loading</span></span>
+      <button class="bell" id="bell" type="button" title="Notify me when an organ's status changes">🔔</button>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+    <section class="heart" id="heart" aria-live="polite"><h2>Heart</h2><p class="meta">loading…</p></section>
+    <div class="cards" id="cards"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p id="polled">not polled yet</p>
+    <p id="install"></p>
+  </div>
+</footer>
+
+<script>
+// One line per organ, canonical order. feed: null renders a grey "no feed yet" card.
+// Contract: PyAutoBrain board/state_schema.json (schema_version 1).
+const BASE = "https://pyautolabs.github.io/";
+const ORGANS = [
+  { organ: "Brain",  repo: "PyAutoBrain",  feed: BASE + "PyAutoBrain/state.json" },
+  { organ: "Mind",   repo: "PyAutoMind",   feed: BASE + "PyAutoMind/state.json" },
+  { organ: "Cortex", repo: "PyAutoCortex", feed: BASE + "PyAutoCortex/state.json" },
+  { organ: "Memory", repo: "PyAutoMemory", feed: BASE + "PyAutoMemory/state.json" },
+  { organ: "Eyes",   repo: "PyAutoEyes",   feed: null },
+  { organ: "Heart",  repo: "PyAutoHeart",  feed: BASE + "PyAutoHeart/state.json" },
+  { organ: "Hands",  repo: "PyAutoHands",  feed: BASE + "PyAutoHands/state.json" },
+  { organ: "Nerves", repo: "PyAutoNerves", feed: null },
+  { organ: "Gut",    repo: "PyAutoGut",    feed: null },
+];
+const PINNED = "Heart";
+const POLL_MS = 60000;
+const MAX_ITEMS = 8;
+const STATUSES = ["green", "yellow", "red", "stale", "grey"];
+const SEVERITIES = ["red", "yellow", "info"];
+// Worst first: what the header shows when organs disagree.
+const RANK = { red: 4, yellow: 3, stale: 2, grey: 1, green: 0 };
+const LS_KEY = "pyauto-cockpit:last-good:";
+
+// Per-organ view state: { feed, error, lastGood, lastGoodAt }
+const state = {};
+let prevStatus = null;   // organ -> status from the previous successful poll
+let polling = false;
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function safeUrl(u) {
+  return typeof u === "string" && /^https?:\/\//i.test(u) ? u : null;
+}
+function age(iso) {
+  const t = Date.parse(iso);
+  if (isNaN(t)) return "unknown age";
+  let s = Math.max(0, Math.round((Date.now() - t) / 1000));
+  if (s < 60) return s + "s ago";
+  const m = Math.round(s / 60); if (m < 60) return m + "m ago";
+  const h = Math.round(m / 60); if (h < 48) return h + "h ago";
+  return Math.round(h / 24) + "d ago";
+}
+
+function lsGet(repo) {
+  try { const v = localStorage.getItem(LS_KEY + repo); return v ? JSON.parse(v) : null; }
+  catch (e) { return null; }
+}
+function lsSet(repo, obj) {
+  try { localStorage.setItem(LS_KEY + repo, JSON.stringify(obj)); } catch (e) { /* private mode */ }
+}
+
+// Minimal client-side check of the v1 contract; returns an error string or null.
+function validate(d) {
+  if (!d || typeof d !== "object") return "not an object";
+  if (d.schema_version !== 1) return "schema_version " + d.schema_version;
+  if (!STATUSES.includes(d.status)) return "status " + d.status;
+  if (typeof d.headline !== "string") return "no headline";
+  if (!Array.isArray(d.items)) return "no items";
+  for (const it of d.items) {
+    if (!it || !SEVERITIES.includes(it.severity) || typeof it.text !== "string") return "bad item";
+  }
+  return null;
+}
+
+async function fetchOrgan(o) {
+  const st = state[o.organ] || (state[o.organ] = {});
+  if (!st.lastGood) {
+    const saved = lsGet(o.repo);
+    if (saved) { st.lastGood = saved.feed; st.lastGoodAt = saved.at; }
+  }
+  if (!o.feed) { st.feed = null; st.error = null; return; }
+  try {
+    // no-store skips the browser cache; the query string skips the Pages CDN cache.
+    const r = await fetch(o.feed + "?t=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    let d;
+    try { d = await r.json(); } catch (e) { st.feed = null; st.error = "bad feed: not JSON"; return; }
+    const bad = validate(d);
+    if (bad) { st.feed = null; st.error = "bad feed: " + bad; return; }
+    st.feed = d; st.error = null;
+    st.lastGood = d; st.lastGoodAt = new Date().toISOString();
+    lsSet(o.repo, { feed: d, at: st.lastGoodAt });
+  } catch (e) {
+    st.feed = null; st.error = "unreachable";
+  }
+}
+
+// The status an organ counts as: live feed, else its last good one, else grey.
+function effective(o) {
+  const st = state[o.organ] || {};
+  const d = st.feed || st.lastGood;
+  return d ? d.status : "grey";
+}
+function feedFor(o) { const st = state[o.organ] || {}; return st.feed || st.lastGood || null; }
+function redItems(o) {
+  const d = feedFor(o);
+  return d ? d.items.filter(i => i.severity === "red").length : 0;
+}
+
+function itemsHtml(items) {
+  if (!items.length) return '<p class="empty">nothing needs you</p>';
+  const shown = items.slice(0, MAX_ITEMS).map(it => {
+    const url = safeUrl(it.url);
+    const text = url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(it.text)}</a>` : esc(it.text);
+    const copy = it.prompt
+      ? `<button class="copy" type="button" data-cmd="${esc(it.prompt)}" title="Copy prompt" aria-label="Copy prompt">📋</button>`
+      : "";
+    const sev = it.severity === "info" ? "sev-info" : "s-" + it.severity;
+    return `<li><span class="dot ${sev}"></span><span class="t">${text}</span>${copy}</li>`;
+  });
+  if (items.length > MAX_ITEMS) shown.push(`<li class="more">+ ${items.length - MAX_ITEMS} more on the board</li>`);
+  return `<ul class="items">${shown.join("")}</ul>`;
+}
+
+function metaHtml(o) {
+  const st = state[o.organ] || {};
+  if (!o.feed) return '<p class="meta">no feed yet</p>';
+  const d = feedFor(o);
+  if (st.error) {
+    const good = st.lastGoodAt ? " · last good " + age(st.lastGoodAt) : " · no last good copy";
+    return `<p class="meta"><span class="warn">${esc(st.error)}</span>${good}</p>`;
+  }
+  return d ? `<p class="meta">updated ${esc(age(d.updated))}</p>` : '<p class="meta">loading…</p>';
+}
+
+function boardUrl(o) {
+  const d = feedFor(o);
+  return safeUrl(d && d.pages_url) || BASE + o.repo + "/";
+}
+
+function cardHtml(o) {
+  const status = o.feed ? effective(o) : "grey";
+  const d = feedFor(o);
+  const word = !o.feed ? "no feed" : (state[o.organ] || {}).error && !d ? "unknown" : status;
+  const head = !o.feed ? '<p class="headline empty">This organ does not publish a state.json yet.</p>'
+    : d ? `<p class="headline">${esc(d.headline)}</p>` : "";
+  return `<article class="card s-${status}">
+    <h3><span class="dot"></span>${esc(o.organ)}<span class="word">${esc(word)}</span></h3>
+    ${head}${metaHtml(o)}${d ? itemsHtml(d.items) : ""}
+    <div class="foot"><a href="${esc(boardUrl(o))}" target="_blank" rel="noopener">${esc(o.repo)} board →</a></div>
+  </article>`;
+}
+
+function renderHeart() {
+  const o = ORGANS.find(x => x.organ === PINNED);
+  const el = document.getElementById("heart");
+  if (!o) { el.hidden = true; return; }
+  const status = effective(o);
+  const d = feedFor(o);
+  el.className = "heart s-" + status + (el.classList.contains("flash") ? " flash" : "");
+  el.innerHTML = `<h2><span class="dot"></span>${esc(o.organ)} <span class="word">${esc(status)}</span>
+      <a class="meta" style="margin-left:auto" href="${esc(boardUrl(o))}" target="_blank" rel="noopener">board →</a></h2>
+    ${d ? `<p class="headline">${esc(d.headline)}</p>` : ""}${metaHtml(o)}${d ? itemsHtml(d.items) : ""}`;
+}
+
+function renderHeader() {
+  const live = ORGANS.filter(o => o.feed);
+  const worst = live.reduce((w, o) => RANK[effective(o)] > RANK[w] ? effective(o) : w, "green");
+  const reds = ORGANS.reduce((n, o) => n + redItems(o), 0);
+  const el = document.getElementById("overall");
+  el.className = "overall s-" + worst;
+  el.innerHTML = `<span class="dot"></span><span class="word">${esc(worst)}</span>` +
+    (reds ? `<span class="count">· ${reds} red</span>` : "");
+  document.title = (reds ? `(${reds} red) ` : "") + "PyAuto Cockpit";
+  updateBadge(reds);
+}
+
+function render() {
+  renderHeart();
+  document.getElementById("cards").innerHTML = ORGANS.map(cardHtml).join("");
+  renderHeader();
+  document.getElementById("polled").textContent = "polled " + new Date().toLocaleTimeString() +
+    " · every " + POLL_MS / 1000 + " s and when this page is shown";
+}
+
+// ---- attention: app badge, notifications, Heart flash ----
+
+function updateBadge(n) {
+  try {
+    if (n > 0 && "setAppBadge" in navigator) navigator.setAppBadge(n).catch(() => {});
+    else if ("clearAppBadge" in navigator) navigator.clearAppBadge().catch(() => {});
+  } catch (e) { /* unsupported */ }
+}
+
+function notifyReady() {
+  return "Notification" in window && Notification.permission === "granted";
+}
+function renderBell() {
+  const b = document.getElementById("bell");
+  if (!("Notification" in window)) { b.hidden = true; return; }
+  const p = Notification.permission;
+  b.classList.toggle("on", p === "granted");
+  b.textContent = p === "granted" ? "🔔 on" : p === "denied" ? "🔕 blocked" : "🔔";
+  b.title = p === "granted" ? "You will be notified when an organ's status changes"
+    : p === "denied" ? "Notifications are blocked in this browser's site settings"
+    : "Notify me when an organ's status changes";
+}
+async function onBell() {
+  if (!("Notification" in window)) return;
+  try { await Notification.requestPermission(); } catch (e) { /* old Safari callback form */ }
+  renderBell();
+}
+
+async function showNotification(title, body) {
+  if (!notifyReady()) return;
+  const opts = { body, tag: "pyauto-cockpit:" + title.split(":")[0], renotify: true };
+  try {
+    // Installed PWAs (Android in particular) only allow notifications via the service worker.
+    const reg = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : null;
+    if (reg) { await reg.showNotification(title, opts); return; }
+  } catch (e) { /* fall through */ }
+  try { new Notification(title, opts); } catch (e) { /* not allowed here */ }
+}
+
+function flashHeart() {
+  const el = document.getElementById("heart");
+  el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+  setTimeout(() => el.classList.remove("flash"), 3000);
+}
+
+// Compare this poll's live statuses with the previous poll's; notify on each change.
+function detectTransitions() {
+  const now = {};
+  for (const o of ORGANS) {
+    const st = state[o.organ];
+    if (o.feed && st && st.feed) now[o.organ] = st.feed.status;
+  }
+  if (prevStatus) {
+    let changed = false;
+    for (const organ of Object.keys(now)) {
+      const before = prevStatus[organ];
+      if (before && before !== now[organ]) {
+        changed = true;
+        showNotification(`${organ}: ${before.toUpperCase()} → ${now[organ].toUpperCase()}`,
+          state[organ].feed.headline);
+      }
+    }
+    if (changed) flashHeart();
+  }
+  // Keep unreachable organs' previous status so a recovery compares against it.
+  prevStatus = Object.assign({}, prevStatus || {}, now);
+}
+
+async function poll() {
+  if (polling) return;
+  polling = true;
+  try {
+    await Promise.all(ORGANS.map(fetchOrgan));
+    detectTransitions();
+    render();
+  } finally { polling = false; }
+}
+
+// ---- one-tap copy (same pattern as the organ boards' _theme.py) ----
+async function copyCmd(b) {
+  const cmd = b.dataset.cmd;
+  try { await navigator.clipboard.writeText(cmd); }
+  catch (e) {
+    const t = document.createElement("textarea"); t.value = cmd;
+    document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove();
+  }
+  const old = b.textContent;
+  b.textContent = "✓"; b.classList.add("ok");
+  setTimeout(() => { b.textContent = old; b.classList.remove("ok"); }, 1200);
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("button.copy"); if (b) copyCmd(b);
+});
+
+// ---- install state ----
+function renderInstall() {
+  const standalone = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) ||
+    navigator.standalone === true;
+  const el = document.getElementById("install");
+  if (standalone) { el.textContent = "installed · running as an app"; return; }
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  el.textContent = ios
+    ? "install: Share → Add to Home Screen"
+    : "install: use the install icon in the address bar, or the browser menu → Install app";
+}
+
+document.getElementById("bell").addEventListener("click", onBell);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") poll(); });
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => {});
+}
+renderBell();
+renderInstall();
+// Paint last-good copies instantly, then fetch live.
+for (const o of ORGANS) {
+  const saved = lsGet(o.repo);
+  state[o.organ] = saved ? { lastGood: saved.feed, lastGoodAt: saved.at } : {};
+}
+render();
+poll();
+setInterval(poll, POLL_MS);
+</script>
+</body>
+</html>
