@@ -97,7 +97,9 @@
     padding: 1rem 1.1rem 0.9rem; display: flex; flex-direction: column;
     border-top: 3px solid var(--st, var(--grey)); min-width: 0;
   }
-  .card h3 { font-size: 1.1rem; display: flex; align-items: center; gap: 0.5em; }
+  .card h3 { font-size: 1.1rem; display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; }
+  .panel-name { display: inline-flex; align-items: center; gap: 0.4em; }
+  .panel-icon { flex: none; font-size: 1.25em; line-height: 1; }
   .card h3 .word { margin-left: auto; }
   .headline { margin: 0.35rem 0 0.2rem; overflow-wrap: anywhere; }
   .meta { color: var(--text-soft); font-size: 0.82rem; }
@@ -367,7 +369,7 @@ function cardHtml(o) {
   const head = !o.feed ? '<p class="headline empty">This organ does not publish a state.json yet.</p>'
     : d ? `<p class="headline">${esc(d.headline)}</p>` : "";
   return `<article class="card s-${status}">
-    <h3><span class="dot"></span>${esc(o.organ)}<span class="word">${esc(word)}</span></h3>
+    <h3><span class="dot"></span><span class="panel-name"><span class="panel-icon" aria-hidden="true">${esc(o.icon)}</span>${esc(o.organ)}</span><span class="word">${esc(word)}</span></h3>
     ${head}${metaHtml(o)}${d ? itemsHtml(d.items) : ""}
     <div class="foot"><a href="#${o.organ.toLowerCase()}" data-board="${esc(o.organ)}">${esc(o.repo)} board →</a></div>
   </article>`;
@@ -380,7 +382,7 @@ function renderHeart() {
   const status = effective(o);
   const d = feedFor(o);
   el.className = "heart s-" + status + (el.classList.contains("flash") ? " flash" : "");
-  el.innerHTML = `<h2><span class="dot"></span>${esc(o.organ)} <span class="word">${esc(status)}</span>
+  el.innerHTML = `<h2><span class="dot"></span><span class="panel-name"><span class="panel-icon" aria-hidden="true">${esc(o.icon)}</span>${esc(o.organ)}</span> <span class="word">${esc(status)}</span>
       <a class="meta" style="margin-left:auto" href="#${o.organ.toLowerCase()}" data-board="${esc(o.organ)}">board →</a></h2>
     ${d ? `<p class="headline">${esc(d.headline)}</p>` : ""}${metaHtml(o)}${d ? itemsHtml(d.items) : ""}`;
 }
