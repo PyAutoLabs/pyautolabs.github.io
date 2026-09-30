@@ -36,4 +36,4 @@ feeds are the truth.
 - The Nerves' card reads the [Nerves board](https://pyautolabs.github.io/PyAutoNerves/)
   feed (PyAutoNerves#172) — a read-only browser of every config file and option
   across the libraries and workspaces: yellow when a config file does not parse
-  or a workspace sets keys no library defines. Eyes stays grey.
+  or a workspace sets keys no library defines.
