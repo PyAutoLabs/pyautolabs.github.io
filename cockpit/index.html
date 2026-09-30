@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PyAuto Cockpit</title>
-<meta name="description" content="One installable page reading every PyAuto organ's state.json feed: the Heart pinned first, a card per organ, a badge and a local notification on any status change.">
+<meta name="description" content="Your PyAuto boards in one place: live status, organ navigation and a mobile-friendly cockpit.">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#7c4dff">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -58,11 +58,11 @@
   a:hover { text-decoration: underline; }
   .wrap { max-width: 1160px; margin: 0 auto; padding: 0 1rem; }
 
-  nav { border-bottom: 1px solid var(--line); background: var(--bg); position: sticky; top: 0; z-index: 2; }
-  nav .wrap { min-height: 3.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-  nav .home { color: var(--text); font-weight: 750; }
-  nav .home span { color: var(--text-soft); font-weight: 600; }
-  nav .right { display: flex; align-items: center; gap: 0.8rem; font-size: 0.95rem; font-weight: 600; }
+  .topbar { border-bottom: 1px solid var(--line); background: var(--bg);  }
+  .topbar .wrap { min-height: 3.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .topbar .home { color: var(--text); font-weight: 750; }
+  .topbar .home span { color: var(--text-soft); font-weight: 600; }
+  .topbar .right { display: flex; align-items: center; gap: 0.8rem; font-size: 0.95rem; font-weight: 600; }
   .overall { display: inline-flex; align-items: center; gap: 0.4em; }
   .overall .count { color: var(--red); }
   button.bell {
@@ -91,7 +91,7 @@
   .heart h2 { font-size: 1.15rem; display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; }
   .heart .headline { font-size: 1.05rem; margin: 0.2rem 0 0.4rem; }
 
-  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 1rem; }
   .card {
     background: var(--card-bg); border: 1px solid var(--line); border-radius: 12px;
     padding: 1rem 1.1rem 0.9rem; display: flex; flex-direction: column;
@@ -119,11 +119,74 @@
 
   footer { color: var(--text-soft); font-size: 0.85rem; text-align: center; padding: 0 0 2.5rem; }
   footer p + p { margin-top: 0.3rem; }
+
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+  .shell-header { flex: none; padding-top: env(safe-area-inset-top); background: var(--bg); }
+  .topbar .wrap { min-height: 3.25rem; flex-wrap: nowrap; gap: 0.5rem; }
+  .topbar .home { white-space: nowrap; font-size: 0.95rem; }
+  .topbar .right { gap: 0.5rem; }
+  .topbar .count { font-size: 0.8rem; }
+  .wrap { width: 100%; }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  :focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .board-nav { border-bottom: 1px solid var(--line); background: var(--bg-alt); }
+  .nav-scroll { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin;
+    padding: 0.45rem max(0.5rem, env(safe-area-inset-left)); scroll-padding-inline: 0.5rem; }
+  .board-nav ul { display: flex; gap: 0.3rem; list-style: none; width: max-content; margin: auto; }
+  .board-link { position: relative; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 0.15rem; min-width: 76px; min-height: 64px; padding: 0.4rem 0.65rem;
+    border: 1px solid transparent; border-radius: 12px; color: var(--text-soft); font-size: 0.8rem; font-weight: 650; }
+  .board-link:hover { background: var(--bg); text-decoration: none; }
+  .board-link[aria-current="page"] { background: var(--bg); color: var(--brand); border-color: var(--brand); }
+  .organ-icon { font-size: 1.55rem; line-height: 1.25; }
+  .board-link .dot { position: absolute; right: 9px; top: 8px; width: 8px; height: 8px; }
+  .nav-hint { text-align: right; color: var(--text-soft); font-size: 0.7rem; padding: 0 0.75rem 0.2rem; }
+  .view { flex: 1; min-height: 0; min-width: 0; }
+  #overview { overflow: auto; overscroll-behavior: contain; padding-bottom: env(safe-area-inset-bottom); }
+  #overview h1 { font-size: 1.35rem; margin-bottom: 0.1rem; }
+  .intro { color: var(--text-soft); margin-bottom: 1.2rem; font-size: 0.9rem; }
+  #overview footer { padding-top: 1.5rem; }
+  #board-view { display: flex; flex-direction: column; padding: 0; }
+  .board-toolbar { flex: none; display: flex; align-items: center; justify-content: space-between;
+    gap: 0.5rem; padding: 0.3rem max(0.65rem, env(safe-area-inset-left)); border-bottom: 1px solid var(--line); }
+  .board-toolbar h1 { font-size: 1rem; outline-offset: 0; }
+  .board-toolbar .actions { display: flex; gap: 0.35rem; flex: none; }
+  .action { display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem;
+    min-height: 44px; min-width: 44px; padding: 0.35rem 0.6rem; border: 1px solid var(--line);
+    border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; font-size: 0.8rem; cursor: pointer; }
+  .action:hover { border-color: var(--brand); text-decoration: none; }
+  #board-status { font-size: 0.75rem; color: var(--text-soft); overflow-wrap: anywhere; }
+  #board-stage { flex: 1; min-height: 0; display: flex; padding-bottom: env(safe-area-inset-bottom); }
+  #board-stage iframe { display: block; border: 0; width: 100%; height: 100%; min-width: 0; background: var(--bg); }
+  button.bell, button.copy { min-width: 44px; min-height: 44px; }
+  .card .foot a, .heart h2 a { display: inline-flex; min-height: 44px; align-items: center; }
+  @media (max-width: 420px) {
+    .topbar .home span { display: none; }
+    .topbar .wrap { padding-inline: 0.65rem; }
+    .board-link { min-width: 70px; }
+    .action .action-label { display: none; }
+    .card { padding-inline: 0.85rem; }
+  }
+  @media (max-height: 500px) and (orientation: landscape) {
+    body.board-open .topbar { display: none; }
+    .board-link { flex-direction: row; min-height: 44px; gap: 0.4rem; padding-right: 1.2rem; }
+    .organ-icon { font-size: 1.15rem; }
+    .nav-scroll { padding-block: 0.2rem; }
+    .nav-hint { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
+  }
 </style>
 </head>
 <body>
 
-<nav aria-label="Cockpit navigation">
+<header class="shell-header">
+<div class="topbar">
   <div class="wrap">
     <a class="home" href="/">PyAutoLabs <span>/ Cockpit</span></a>
     <div class="right">
@@ -131,36 +194,53 @@
       <button class="bell" id="bell" type="button" title="Notify me when an organ's status changes">🔔</button>
     </div>
   </div>
+</div>
+<nav class="board-nav" aria-label="Organ boards">
+  <div class="nav-scroll" id="nav-scroll"><ul id="board-nav"></ul></div>
+  <p class="nav-hint" id="nav-hint" hidden>Scroll for more boards →</p>
 </nav>
+</header>
 
-<main>
+<main id="overview" class="view">
   <div class="wrap">
+    <h1 id="overview-heading" tabindex="-1">Your cockpit</h1>
+    <p class="intro">One place for every organ. Choose a board above to take a closer look.</p>
     <section class="heart" id="heart" aria-live="polite"><h2>Heart</h2><p class="meta">loading…</p></section>
     <div class="cards" id="cards"></div>
   </div>
-</main>
-
 <footer>
   <div class="wrap">
     <p id="polled">not polled yet</p>
     <p id="install"></p>
   </div>
 </footer>
+</main>
+
+<main id="board-view" class="view" hidden aria-labelledby="board-heading">
+  <div class="board-toolbar">
+    <div><h1 id="board-heading" tabindex="-1"></h1><p id="board-status" role="status"></p></div>
+    <div class="actions">
+      <button class="action" id="board-reload" type="button" aria-label="Reload board" title="Reload board">↻<span class="action-label">Reload</span></button>
+      <a class="action" id="board-external" target="_blank" rel="noopener" aria-label="Open board in a new tab" title="Open board in a new tab">↗<span class="action-label">New tab</span></a>
+    </div>
+  </div>
+  <div id="board-stage"></div>
+</main>
 
 <script>
 // One line per organ, canonical order. feed: null renders a grey "no feed yet" card.
 // Contract: PyAutoBrain board/state_schema.json (schema_version 1).
 const BASE = "https://pyautolabs.github.io/";
 const ORGANS = [
-  { organ: "Brain",  repo: "PyAutoBrain",  feed: BASE + "PyAutoBrain/state.json" },
-  { organ: "Mind",   repo: "PyAutoMind",   feed: BASE + "PyAutoMind/state.json" },
-  { organ: "Cortex", repo: "PyAutoCortex", feed: BASE + "PyAutoCortex/state.json" },
-  { organ: "Memory", repo: "PyAutoMemory", feed: BASE + "PyAutoMemory/state.json" },
-  { organ: "Eyes",   repo: "PyAutoEyes",   feed: BASE + "PyAutoEyes/state.json" },
-  { organ: "Heart",  repo: "PyAutoHeart",  feed: BASE + "PyAutoHeart/state.json" },
-  { organ: "Hands",  repo: "PyAutoHands",  feed: BASE + "PyAutoHands/state.json" },
-  { organ: "Nerves", repo: "PyAutoNerves", feed: BASE + "PyAutoNerves/state.json" },
-  { organ: "Gut",    repo: "PyAutoGut",    feed: BASE + "PyAutoGut/state.json" },
+  { organ: "Brain", icon: "🧠",  repo: "PyAutoBrain",  feed: BASE + "PyAutoBrain/state.json" },
+  { organ: "Mind", icon: "💭",   repo: "PyAutoMind",   feed: BASE + "PyAutoMind/state.json" },
+  { organ: "Cortex", icon: "🔬", repo: "PyAutoCortex", feed: BASE + "PyAutoCortex/state.json" },
+  { organ: "Memory", icon: "📚", repo: "PyAutoMemory", feed: BASE + "PyAutoMemory/state.json" },
+  { organ: "Eyes", icon: "👁️",   repo: "PyAutoEyes",   feed: BASE + "PyAutoEyes/state.json" },
+  { organ: "Heart", icon: "❤️",  repo: "PyAutoHeart",  feed: BASE + "PyAutoHeart/state.json" },
+  { organ: "Hands", icon: "🛠️",  repo: "PyAutoHands",  feed: BASE + "PyAutoHands/state.json" },
+  { organ: "Nerves", icon: "⚡", repo: "PyAutoNerves", feed: BASE + "PyAutoNerves/state.json" },
+  { organ: "Gut", icon: "♻️",    repo: "PyAutoGut",    feed: BASE + "PyAutoGut/state.json" },
 ];
 const PINNED = "Heart";
 const POLL_MS = 60000;
@@ -289,7 +369,7 @@ function cardHtml(o) {
   return `<article class="card s-${status}">
     <h3><span class="dot"></span>${esc(o.organ)}<span class="word">${esc(word)}</span></h3>
     ${head}${metaHtml(o)}${d ? itemsHtml(d.items) : ""}
-    <div class="foot"><a href="${esc(boardUrl(o))}" target="_blank" rel="noopener">${esc(o.repo)} board →</a></div>
+    <div class="foot"><a href="#${o.organ.toLowerCase()}" data-board="${esc(o.organ)}">${esc(o.repo)} board →</a></div>
   </article>`;
 }
 
@@ -301,7 +381,7 @@ function renderHeart() {
   const d = feedFor(o);
   el.className = "heart s-" + status + (el.classList.contains("flash") ? " flash" : "");
   el.innerHTML = `<h2><span class="dot"></span>${esc(o.organ)} <span class="word">${esc(status)}</span>
-      <a class="meta" style="margin-left:auto" href="${esc(boardUrl(o))}" target="_blank" rel="noopener">board →</a></h2>
+      <a class="meta" style="margin-left:auto" href="#${o.organ.toLowerCase()}" data-board="${esc(o.organ)}">board →</a></h2>
     ${d ? `<p class="headline">${esc(d.headline)}</p>` : ""}${metaHtml(o)}${d ? itemsHtml(d.items) : ""}`;
 }
 
@@ -321,8 +401,167 @@ function render() {
   renderHeart();
   document.getElementById("cards").innerHTML = ORGANS.map(cardHtml).join("");
   renderHeader();
+  updateNavigation();
   document.getElementById("polled").textContent = "polled " + new Date().toLocaleTimeString() +
     " · every " + POLL_MS / 1000 + " s and when this page is shown";
+}
+
+// ---- one-window board navigation ----
+let selectedOrgan = null;
+let boardFrame = null;
+let boardTimer = null;
+let currentBoardUrl = null;
+const BOARD_ORIGIN = new URL(BASE).origin;
+
+function organAt(url) {
+  try {
+    const u = new URL(url);
+    if (u.origin !== BOARD_ORIGIN || u.username || u.password) return null;
+    return ORGANS.find(o => u.pathname === '/' + o.repo || u.pathname.startsWith('/' + o.repo + '/')) || null;
+  } catch (e) { return null; }
+}
+function plainClick(e) {
+  return e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey;
+}
+function routeHash(o) { return '#' + (o ? o.organ.toLowerCase() : 'overview'); }
+function setRoute(o, mode) {
+  const hash = routeHash(o);
+  if (location.hash !== hash) history[mode === 'push' ? 'pushState' : 'replaceState'](null, '', hash);
+}
+function updateOverflowHint() {
+  const strip = document.getElementById('nav-scroll');
+  document.getElementById('nav-hint').hidden = strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 4;
+}
+function revealSelection() {
+  const link = document.querySelector('.board-link[aria-current="page"]');
+  if (link) link.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+  updateOverflowHint();
+}
+function initNavigation() {
+  const home = `<li><a class="board-link" href="#overview" data-board="Overview"><span class="organ-icon" aria-hidden="true">🏠</span><span>Overview</span></a></li>`;
+  document.getElementById('board-nav').innerHTML = home + ORGANS.map(o =>
+    `<li><a class="board-link" href="${routeHash(o)}" data-board="${o.organ}"><span class="organ-icon" aria-hidden="true">${o.icon}</span><span>${o.organ}</span><span class="dot" aria-hidden="true"></span><span class="sr-only nav-status"></span></a></li>`).join('');
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[data-board]');
+    if (!a || !plainClick(e)) return;
+    e.preventDefault();
+    selectBoard(ORGANS.find(o => o.organ === a.dataset.board) || null, { focus: true });
+  });
+  document.getElementById('nav-scroll').addEventListener('scroll', updateOverflowHint, { passive: true });
+  window.addEventListener('resize', updateOverflowHint);
+  window.addEventListener('popstate', () => showRoute(true));
+  window.addEventListener('hashchange', () => showRoute(true));
+  document.getElementById('board-reload').addEventListener('click', () => {
+    if (selectedOrgan) loadBoard(selectedOrgan, currentBoardUrl || boardUrl(selectedOrgan));
+  });
+}
+function updateNavigation() {
+  document.querySelectorAll('.board-link').forEach(link => {
+    const o = ORGANS.find(x => x.organ === link.dataset.board);
+    const selected = o ? o === selectedOrgan : selectedOrgan === null;
+    if (selected) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+    if (!o) return;
+    const status = effective(o);
+    const error = (state[o.organ] || {}).error;
+    const description = error ? error + ' · last known ' + status : status;
+    link.querySelector('.dot').className = 'dot s-' + (error ? 'stale' : status);
+    link.querySelector('.nav-status').textContent = ' — ' + description;
+    link.title = o.organ + ': ' + description;
+  });
+}
+function showRoute(focus) {
+  const o = ORGANS.find(x => routeHash(x) === location.hash.toLowerCase()) || null;
+  selectBoard(o, { mode: 'replace', focus });
+}
+function selectBoard(o, { mode = 'push', focus = false, url = null, fromFrame = false } = {}) {
+  const changed = o !== selectedOrgan;
+  selectedOrgan = o;
+  setRoute(o, mode);
+  document.body.classList.toggle('board-open', !!o);
+  document.getElementById('overview').hidden = !!o;
+  document.getElementById('board-view').hidden = !o;
+  if (o) {
+    document.getElementById('board-heading').textContent = o.organ + ' board';
+    if (!fromFrame && (changed || url || !boardFrame)) loadBoard(o, url || boardUrl(o));
+  } else {
+    clearTimeout(boardTimer);
+    if (boardFrame) boardFrame.remove();
+    boardFrame = null;
+    currentBoardUrl = null;
+  }
+  updateNavigation();
+  revealSelection();
+  if (focus) document.getElementById(o ? 'board-heading' : 'overview-heading').focus({ preventScroll: true });
+}
+function boardMessage(message) {
+  document.getElementById('board-status').textContent = message;
+}
+function loadBoard(o, url) {
+  clearTimeout(boardTimer);
+  currentBoardUrl = url;
+  document.getElementById('board-external').href = url;
+  // Only our known Pages boards run inside the cockpit. Keep other feed links external.
+  if (organAt(url) !== o) {
+    if (boardFrame) boardFrame.remove();
+    boardFrame = null;
+    document.getElementById('board-stage').removeAttribute('aria-busy');
+    boardMessage('This destination opens separately. Use New tab.');
+    return;
+  }
+  boardMessage('Loading…');
+  document.getElementById('board-stage').setAttribute('aria-busy', 'true');
+  boardTimer = setTimeout(() => boardMessage('Taking a while? Try Reload or New tab.'), 15000);
+  if (boardFrame) {
+    boardFrame.title = o.organ + ' board';
+    try {
+      // Replacing the child document avoids an extra Back entry for each board switch.
+      boardFrame.contentWindow.location.replace(url);
+      return;
+    } catch (e) { boardFrame.remove(); }
+  }
+  boardFrame = document.createElement('iframe');
+  boardFrame.title = o.organ + ' board';
+  boardFrame.setAttribute('allow', 'clipboard-write');
+  boardFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-downloads allow-popups allow-popups-to-escape-sandbox');
+  boardFrame.addEventListener('load', onBoardLoad);
+  boardFrame.src = url;
+  document.getElementById('board-stage').replaceChildren(boardFrame);
+}
+function onBoardLoad() {
+  if (this !== boardFrame || !selectedOrgan) return;
+  clearTimeout(boardTimer);
+  document.getElementById('board-stage').removeAttribute('aria-busy');
+  // A load event also fires for some failed navigations; never report HTTP success here.
+  boardMessage('');
+  try {
+    const url = boardFrame.contentWindow.location.href;
+    const o = organAt(url);
+    if (!o) { boardMessage('Use New tab if this page cannot be displayed.'); return; }
+    currentBoardUrl = url;
+    document.getElementById('board-external').href = url;
+    boardFrame.title = o.organ + ' board';
+    if (o !== selectedOrgan) selectBoard(o, { mode: 'replace', fromFrame: true });
+    // Same-origin production boards: keep inter-board links in this window and
+    // let GitHub/docs links open externally instead of replacing the embedded board.
+    boardFrame.contentDocument.addEventListener('click', e => {
+      const a = e.target.closest('a[href]');
+      if (!a || !plainClick(e) || a.hasAttribute('download')) return;
+      const destination = new URL(a.href);
+      const targetOrgan = organAt(destination.href);
+      if (targetOrgan && targetOrgan !== selectedOrgan) {
+        e.preventDefault();
+        selectBoard(targetOrgan, { focus: true, url: destination.href });
+      } else if (!targetOrgan && /^https?:$/.test(destination.protocol)) {
+        a.target = '_blank';
+        a.rel = 'noopener';
+      }
+    });
+  } catch (e) {
+    // HTTP localhost previews can display live boards, but cannot inspect their
+    // cross-origin documents. Full link integration is available on Pages.
+    boardMessage('Preview: links inside the live board use its own navigation.');
+  }
 }
 
 // ---- attention: app badge, notifications, Heart flash ----
@@ -443,7 +682,9 @@ for (const o of ORGANS) {
   const saved = lsGet(o.repo);
   state[o.organ] = saved ? { lastGood: saved.feed, lastGoodAt: saved.at } : {};
 }
+initNavigation();
 render();
+showRoute(false);
 poll();
 setInterval(poll, POLL_MS);
 </script>

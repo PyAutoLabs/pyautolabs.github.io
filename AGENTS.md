@@ -42,6 +42,19 @@ each organ's `https://pyautolabs.github.io/<Repo>/state.json` (same origin as
 the page) and renders the Heart strip plus one card per organ in canonical
 order (Brain, Mind, Cortex, Memory, Eyes, Heart, Hands, Nerves, Gut).
 
+- **Integrated boards:** persistent icon/label navigation selects Overview or a
+  board at `/cockpit/#<organ>` (lowercase). A single titled iframe displays only
+  known organ paths on `https://pyautolabs.github.io`; other destinations remain
+  external. Use child `location.replace` when switching so shell routes own
+  Back/Forward. Polling must never recreate the selected board or navigation.
+- **Mobile/accessibility:** keep labels, textual status equivalents, `aria-current`,
+  44px touch targets, scrollable navigation, dynamic viewport height and focus
+  on the selected heading. Child boards own their CSS; report layout defects to
+  their repositories. Eyes currently overflows horizontally below about 797px.
+- **Preview:** use an HTTP server, not `file://`. Localhost embeds live boards
+  cross-origin; internal-link interception and route reconciliation require the
+  shared Pages origin. Distinguish browser viewport emulation from physical
+  iOS/Android verification.
 - **Contract:** PyAutoBrain `board/state_schema.json`, schema_version 1 —
   `{schema_version, organ, repo, status ∈ green|yellow|red|stale|grey,
   headline, updated, pages_url, items:[{severity ∈ red|yellow|info, text,
