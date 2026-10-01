@@ -2,7 +2,7 @@
 // Network-first for everything; the cache is a fallback for the shell URLs so the
 // installed app still opens offline (it then shows each organ's last good feed
 // from localStorage, marked unreachable).
-const CACHE = "pyauto-cockpit-shell-v3";
+const CACHE = "pyauto-cockpit-shell-v4";
 const SHELL = ["/cockpit/", "/cockpit/index.html"];
 
 self.addEventListener("install", event => {

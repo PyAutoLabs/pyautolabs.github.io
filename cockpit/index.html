@@ -116,6 +116,11 @@
     flex: none; width: 2rem; height: 1.7rem; border: 1px solid var(--line); border-radius: 6px;
     background: var(--code-bg); color: var(--text); cursor: pointer; font-size: 0.85rem; line-height: 1;
   }
+  .reason, .decision { display: block; margin-top: 0.25rem; }
+  .reason, .action-safety { color: var(--text-soft); font-size: 0.8rem; }
+  .decision { border-left: 3px solid var(--yellow); padding-left: 0.5rem; }
+  ul.items .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0.35rem 0; }
+  ul.items .action, ul.items button.copy.action { display: inline-flex; align-items: center; min-height: 44px; width: auto; height: auto; padding: 0.45rem 0.6rem; white-space: normal; text-align: left; line-height: 1.3; }
   button.copy:hover { border-color: var(--brand); }
   button.copy.ok { border-color: var(--green); color: var(--green); }
 
@@ -263,7 +268,8 @@ function esc(s) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 function safeUrl(u) {
-  return typeof u === "string" && /^https?:\/\//i.test(u) ? u : null;
+  if (typeof u !== "string" || !/^https?:\/\//i.test(u)) return null;
+  try { const url = new URL(u); return url.hostname ? url.href : null; } catch (e) { return null; }
 }
 function age(iso) {
   const t = Date.parse(iso);
@@ -283,78 +289,131 @@ function lsSet(repo, obj) {
   try { localStorage.setItem(LS_KEY + repo, JSON.stringify(obj)); } catch (e) { /* private mode */ }
 }
 
-// Minimal client-side check of the v1 contract; returns an error string or null.
-function validate(d) {
-  if (!d || typeof d !== "object") return "not an object";
+// Additive v1 metadata: older producers need no migration.
+const ITEM_STATES = ["healthy", "active", "stale", "blocked", "failed", "action_required", "unknown"];
+const ACTION_SAFETY = ["read_only", "requires_approval", "scientific_judgement", "never_automatic", "unclassified"];
+const oneLine = v => typeof v === "string" && v.trim() !== "" && !/[\r\n]/.test(v);
+function utcTime(v) {
+  if (typeof v !== "string" || !/T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|\+00:00)$/.test(v)) return NaN;
+  const t = Date.parse(v);
+  // Date.parse normalizes impossible dates such as February 30.
+  return Number.isFinite(t) && new Date(t).toISOString().slice(0, 19) === v.slice(0, 19) ? t : NaN;
+}
+function validate(d, organ = null) {
+  if (!d || typeof d !== "object" || Array.isArray(d)) return "not an object";
   if (d.schema_version !== 1) return "schema_version " + d.schema_version;
-  if (!STATUSES.includes(d.status)) return "status " + d.status;
-  if (typeof d.headline !== "string") return "no headline";
+  if (!STATUSES.includes(d.status)) return "invalid status";
+  if (![d.organ, d.repo, d.pages_url, d.headline].every(oneLine)) return "missing identity or headline";
+  if (organ && (d.organ !== organ.organ.toLowerCase() || d.repo !== organ.repo)) return "wrong organ";
+  if (!Number.isFinite(utcTime(d.updated))) return "invalid updated timestamp";
+  if ("valid_until" in d && (!Number.isFinite(utcTime(d.valid_until)) || utcTime(d.valid_until) < utcTime(d.updated))) return "invalid valid_until";
   if (!Array.isArray(d.items)) return "no items";
+  const ids = new Set();
   for (const it of d.items) {
-    if (!it || !SEVERITIES.includes(it.severity) || typeof it.text !== "string") return "bad item";
+    if (!it || !SEVERITIES.includes(it.severity) || !oneLine(it.text)) return "bad item";
+    for (const key of ["url", "prompt"]) if (it[key] != null && typeof it[key] !== "string") return "bad " + key;
+    for (const key of ["id", "reason", "decision", "recommended_action_id"]) if (key in it && !oneLine(it[key])) return "bad " + key;
+    if ("id" in it) { if (ids.has(it.id)) return "duplicate item id"; ids.add(it.id); }
+    if ("state" in it && !ITEM_STATES.includes(it.state)) return "bad item state";
+    if ("requires_human_decision" in it && typeof it.requires_human_decision !== "boolean") return "bad decision flag";
+    if (it.requires_human_decision && !oneLine(it.decision)) return "missing decision";
+    if ("actions" in it && !Array.isArray(it.actions)) return "bad actions";
+    const actions = new Set();
+    for (const action of it.actions || []) {
+      if (!action || ![action.id, action.label, action.target].every(oneLine)) return "bad action";
+      if (!["link", "command", "prompt"].includes(action.kind)) return "bad action kind";
+      if ("safety" in action && !ACTION_SAFETY.includes(action.safety)) return "bad action safety";
+      if (action.kind === "link" && !safeUrl(action.target)) return "bad action URL";
+      if (actions.has(action.id)) return "duplicate action id";
+      actions.add(action.id);
+    }
+    if ("recommended_action_id" in it && !actions.has(it.recommended_action_id)) return "missing recommended action";
   }
   return null;
+}
+
+// Pure observation model. Source health and transport/freshness are separate
+// facts. Missing expiry means no declared age policy, not infinite freshness.
+function observation(st = {}, now = Date.now()) {
+  const d = st.feed || st.lastGood || null;
+  const base = { feed: d, sourceStatus: d ? d.status : null, lastChecked: st.lastChecked || null };
+  if (!d) return { ...base, status: "grey", current: false, freshness: "unknown", reason: st.error || "waiting for first check" };
+  if (st.error || !st.feed) return { ...base, status: "stale", current: false, freshness: "unavailable", reason: st.error || "not checked this session" };
+  if (!Number.isFinite(utcTime(d.updated)) || utcTime(d.updated) > now) return { ...base, status: "grey", current: false, freshness: "unknown", reason: "source timestamp is invalid or in the future" };
+  if (d.valid_until && utcTime(d.valid_until) <= now) return { ...base, status: "stale", current: false, freshness: "expired", reason: "source freshness deadline passed" };
+  if (d.status === "stale") return { ...base, status: "stale", current: false, freshness: "expired", reason: "source reports stale evidence" };
+  if (d.status === "grey") return { ...base, status: "grey", current: false, freshness: "unknown", reason: "source reports insufficient evidence" };
+  return { ...base, status: d.status, current: true, freshness: d.valid_until ? "within_policy" : "unspecified", reason: null };
 }
 
 async function fetchOrgan(o) {
   const st = state[o.organ] || (state[o.organ] = {});
   if (!st.lastGood) {
     const saved = lsGet(o.repo);
-    if (saved) { st.lastGood = saved.feed; st.lastGoodAt = saved.at; }
+    if (saved && !validate(saved.feed, o)) { st.lastGood = saved.feed; st.lastGoodAt = saved.at; }
   }
   if (!o.feed) { st.feed = null; st.error = null; return; }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
   try {
     // no-store skips the browser cache; the query string skips the Pages CDN cache.
-    const r = await fetch(o.feed + "?t=" + Date.now(), { cache: "no-store" });
+    const r = await fetch(o.feed + "?t=" + Date.now(), { cache: "no-store", signal: controller.signal });
     if (!r.ok) throw new Error("HTTP " + r.status);
     let d;
     try { d = await r.json(); } catch (e) { st.feed = null; st.error = "bad feed: not JSON"; return; }
-    const bad = validate(d);
+    const bad = validate(d, o);
     if (bad) { st.feed = null; st.error = "bad feed: " + bad; return; }
     st.feed = d; st.error = null;
     st.lastGood = d; st.lastGoodAt = new Date().toISOString();
     lsSet(o.repo, { feed: d, at: st.lastGoodAt });
   } catch (e) {
     st.feed = null; st.error = "unreachable";
-  }
+  } finally { clearTimeout(timeout); st.lastChecked = new Date().toISOString(); }
 }
 
-// The status an organ counts as: live feed, else its last good one, else grey.
-function effective(o) {
-  const st = state[o.organ] || {};
-  const d = st.feed || st.lastGood;
-  return d ? d.status : "grey";
-}
-function feedFor(o) { const st = state[o.organ] || {}; return st.feed || st.lastGood || null; }
+function viewFor(o) { return observation(state[o.organ]); }
+function effective(o) { return viewFor(o).status; }
+function feedFor(o) { return viewFor(o).feed; }
 function redItems(o) {
   const d = feedFor(o);
   return d ? d.items.filter(i => i.severity === "red").length : 0;
 }
 
-function itemsHtml(items) {
-  if (!items.length) return '<p class="empty">nothing needs you</p>';
+const SAFETY_LABEL = { read_only: "Read only", requires_approval: "Approval required",
+  scientific_judgement: "Scientific judgement", never_automatic: "Manual only", unclassified: "Safety unclassified" };
+function actionsHtml(it) {
+  const actions = it.actions || [];
+  const rendered = actions.map(action => {
+    const recommended = action.id === it.recommended_action_id;
+    const safety = SAFETY_LABEL[action.safety || "unclassified"];
+    const title = (recommended ? "Recommended · " : "") + safety;
+    if (action.kind === "link") return `<a class="action" href="${esc(safeUrl(action.target))}" target="_blank" rel="noopener" title="${esc(title)}">${esc(action.label)}</a>`;
+    return `<button class="copy action" type="button" data-cmd="${esc(action.target)}" title="${esc(title)}">${esc(action.label)}</button><span class="action-safety">${esc(safety)}</span>`;
+  });
+  if (it.prompt && !actions.some(a => a.kind !== "link" && a.target === it.prompt)) rendered.push(`<button class="copy action" type="button" data-cmd="${esc(it.prompt)}">Copy prompt</button>`);
+  return rendered.length ? `<span class="actions">${rendered.join("")}</span>` : "";
+}
+function itemsHtml(items, current = true) {
+  if (!items.length) return `<p class="empty">${current ? "nothing needs you" : "no attention items in the last known feed"}</p>`;
   const shown = items.slice(0, MAX_ITEMS).map(it => {
     const url = safeUrl(it.url);
     const text = url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(it.text)}</a>` : esc(it.text);
-    const copy = it.prompt
-      ? `<button class="copy" type="button" data-cmd="${esc(it.prompt)}" title="Copy prompt" aria-label="Copy prompt">📋</button>`
-      : "";
+    const reason = it.reason ? `<span class="reason">${esc(it.reason)}</span>` : "";
+    const decision = it.requires_human_decision ? `<span class="decision"><strong>Your decision:</strong> ${esc(it.decision)}</span>` : "";
     const sev = it.severity === "info" ? "sev-info" : "s-" + it.severity;
-    return `<li><span class="dot ${sev}"></span><span class="t">${text}</span>${copy}</li>`;
+    return `<li><span class="dot ${sev}"></span><span class="t">${text}${reason}${decision}${actionsHtml(it)}</span></li>`;
   });
   if (items.length > MAX_ITEMS) shown.push(`<li class="more">+ ${items.length - MAX_ITEMS} more on the board</li>`);
   return `<ul class="items">${shown.join("")}</ul>`;
 }
 
 function metaHtml(o) {
-  const st = state[o.organ] || {};
   if (!o.feed) return '<p class="meta">no feed yet</p>';
-  const d = feedFor(o);
-  if (st.error) {
-    const good = st.lastGoodAt ? " · last good " + age(st.lastGoodAt) : " · no last good copy";
-    return `<p class="meta"><span class="warn">${esc(st.error)}</span>${good}</p>`;
-  }
-  return d ? `<p class="meta">updated ${esc(age(d.updated))}</p>` : '<p class="meta">loading…</p>';
+  const v = viewFor(o), st = state[o.organ] || {}, d = v.feed;
+  const generated = d ? `generated ${esc(age(d.updated))}` : "";
+  const checked = st.lastChecked ? `checked ${esc(age(st.lastChecked))}` : "";
+  const warning = v.reason ? `<span class="warn">${esc(v.reason)}${d ? " · last known " + esc(d.status) : ""}</span>` : "";
+  return `<p class="meta">${[warning, generated, checked].filter(Boolean).join(" · ")}</p>`;
 }
 
 function boardUrl(o) {
@@ -370,7 +429,7 @@ function cardHtml(o) {
     : d ? `<p class="headline">${esc(d.headline)}</p>` : "";
   return `<article class="card s-${status}">
     <h3><span class="dot"></span><span class="panel-name"><span class="panel-icon" aria-hidden="true">${esc(o.icon)}</span>${esc(o.organ)}</span><span class="word">${esc(word)}</span></h3>
-    ${head}${metaHtml(o)}${d ? itemsHtml(d.items) : ""}
+    ${head}${metaHtml(o)}${d ? itemsHtml(d.items, viewFor(o).current) : ""}
     <div class="foot"><a href="#${o.organ.toLowerCase()}" data-board="${esc(o.organ)}">${esc(o.repo)} board →</a></div>
   </article>`;
 }
@@ -384,19 +443,21 @@ function renderHeart() {
   el.className = "heart s-" + status + (el.classList.contains("flash") ? " flash" : "");
   el.innerHTML = `<h2><span class="dot"></span><span class="panel-name"><span class="panel-icon" aria-hidden="true">${esc(o.icon)}</span>${esc(o.organ)}</span> <span class="word">${esc(status)}</span>
       <a class="meta" style="margin-left:auto" href="#${o.organ.toLowerCase()}" data-board="${esc(o.organ)}">board →</a></h2>
-    ${d ? `<p class="headline">${esc(d.headline)}</p>` : ""}${metaHtml(o)}${d ? itemsHtml(d.items) : ""}`;
+    ${d ? `<p class="headline">${esc(d.headline)}</p>` : ""}${metaHtml(o)}${d ? itemsHtml(d.items, viewFor(o).current) : ""}`;
 }
 
 function renderHeader() {
   const live = ORGANS.filter(o => o.feed);
   const worst = live.reduce((w, o) => RANK[effective(o)] > RANK[w] ? effective(o) : w, "green");
-  const reds = ORGANS.reduce((n, o) => n + redItems(o), 0);
+  const reds = ORGANS.reduce((n, o) => n + (viewFor(o).current ? redItems(o) : 0), 0);
+  const previousReds = ORGANS.reduce((n, o) => n + (!viewFor(o).current ? redItems(o) : 0), 0);
   const el = document.getElementById("overall");
   el.className = "overall s-" + worst;
   el.innerHTML = `<span class="dot"></span><span class="word">${esc(worst)}</span>` +
-    (reds ? `<span class="count">· ${reds} red</span>` : "");
+    (reds ? `<span class="count">· ${reds} red</span>` : "") +
+    (previousReds ? `<span class="count">· ${previousReds} last-known red</span>` : "");
   document.title = (reds ? `(${reds} red) ` : "") + "PyAuto Cockpit";
-  updateBadge(reds);
+  updateBadge(reds + previousReds);
 }
 
 function render() {
@@ -465,9 +526,9 @@ function updateNavigation() {
     else link.removeAttribute('aria-current');
     if (!o) return;
     const status = effective(o);
-    const error = (state[o.organ] || {}).error;
-    const description = error ? error + ' · last known ' + status : status;
-    link.querySelector('.dot').className = 'dot s-' + (error ? 'stale' : status);
+    const v = viewFor(o);
+    const description = v.reason ? v.reason + (v.sourceStatus ? ' · last known ' + v.sourceStatus : '') : status;
+    link.querySelector('.dot').className = 'dot s-' + status;
     link.querySelector('.nav-status').textContent = ' — ' + description;
     link.title = o.organ + ': ' + description;
   });
@@ -616,7 +677,8 @@ function detectTransitions() {
   const now = {};
   for (const o of ORGANS) {
     const st = state[o.organ];
-    if (o.feed && st && st.feed) now[o.organ] = st.feed.status;
+    if (o.feed && st && st.feed && utcTime(st.feed.updated) <= Date.now() &&
+        (!st.feed.valid_until || utcTime(st.feed.valid_until) > Date.now())) now[o.organ] = st.feed.status;
   }
   if (prevStatus) {
     let changed = false;
@@ -682,7 +744,7 @@ renderInstall();
 // Paint last-good copies instantly, then fetch live.
 for (const o of ORGANS) {
   const saved = lsGet(o.repo);
-  state[o.organ] = saved ? { lastGood: saved.feed, lastGoodAt: saved.at } : {};
+  state[o.organ] = saved && !validate(saved.feed, o) ? { lastGood: saved.feed, lastGoodAt: saved.at } : {};
 }
 initNavigation();
 render();
