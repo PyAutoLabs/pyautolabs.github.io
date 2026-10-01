@@ -109,3 +109,23 @@ body and hands them to the human (sessions cannot create Discussions). Only the
 development flow — Mind prompt → `/start_dev` → `/create_issue` → one issue per
 task → PR — opens issues here. Why: `PyAutoMind/policy/community_surface.md`.
 <!-- repos_sync:filing:end -->
+
+## Human-first structured state
+
+Keep the dashboard and future tools on the same owner-published JSON truth.
+The v1 contract now accepts optional item identity/state/reason, action records,
+recommended action and explicit decision metadata; see Brain's schema for the
+exact definitions. Preserve legacy feeds and prompts. Never infer a scientific
+choice just from a blocked gate. Action links open evidence; prompt/command
+buttons only copy their targets, never execute them. Absent safety is unknown.
+
+`observation()` is the pure freshness model used by cards, header and navigation:
+source status, fetch outcome and last-good context remain distinct. Validate
+persisted feeds before rendering, including organ identity. Failed fetching
+must not retain verified-green presentation. Keep generated/checked timestamps
+separate and respect producer `valid_until` without guessing a global TTL.
+Keep source transition notifications distinct from transport failures.
+
+Tests: `node --test tests/cockpit-state.cjs`; no runtime dependency or build step.
+For future enhancements favour small additions that help a human immediately;
+no speculative agent, bus, permissions engine or automation service.

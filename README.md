@@ -52,3 +52,24 @@ be integrated with the shell; test full navigation on the shared Pages origin.
   feed (PyAutoNerves#172) — a read-only browser of every config file and option
   across the libraries and workspaces: yellow when a config file does not parse
   or a workspace sets keys no library defines.
+
+### Actionable state and freshness
+
+The cockpit remains a human interface over the organs' shared `state.json`
+feeds. Brain's optional v1 metadata adds reasons, labelled actions and explicit
+human decisions. It renders old and enriched feeds together. Actions link to
+evidence or copy existing commands/prompts; viewing a problem never executes
+its remedy. Approval and scientific-judgement labels describe the source's
+constraints, and missing safety information is unclassified.
+
+Cards distinguish feed generation from the browser's last check. Failed fetches
+show last-known results as stale, keeping previous failures visible. Invalid or
+future timestamps cannot show current green. Producer-declared `valid_until`
+deadlines are respected; without one the cockpit displays the age and invents
+no expiry interval. Source verdicts, transport failure and freshness stay
+separate. No persistent agent or new notification service is included.
+
+Run the dependency-free contract/model checks with
+`node --test tests/cockpit-state.cjs`. Browser checks should additionally cover
+mobile/light/dark layout, clipboard, navigation and a selected board remaining
+in place during polling. The runtime still needs no packages or build step.
