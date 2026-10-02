@@ -40,7 +40,7 @@ duplicating it.
 `cockpit/` is the organ cockpit — an installable PWA at `/cockpit/` that reads
 each organ's `https://pyautolabs.github.io/<Repo>/state.json` (same origin as
 the page) and renders the Heart strip plus one card per organ in canonical
-order (Brain, Mind, Cortex, Memory, Eyes, Heart, Hands, Nerves, Gut).
+order (Brain, Mind, Cortex, Memory, Eyes, Heart, Hands, Pulse, Nerves, Gut).
 
 - **Integrated boards:** persistent icon/label navigation selects Overview or a
   board at `/cockpit/#<organ>` (lowercase). A single titled iframe displays only
@@ -64,8 +64,9 @@ order (Brain, Mind, Cortex, Memory, Eyes, Heart, Hands, Nerves, Gut).
 - **Adding an organ** is one line in the `ORGANS` array at the top of
   `cockpit/index.html`; use `feed: null` until the organ publishes a feed
   (it renders as a grey "no feed yet" card). Publishing today: Brain, Mind, Cortex,
-  Memory, Eyes (the Eyes board, PyAutoEyes#6), Heart, Hands, Nerves (the Nerves
-  config board, PyAutoNerves#172) and Gut (the Gut board, PyAutoGut#9).
+  Memory, Eyes (the Eyes board, PyAutoEyes#6), Heart, Hands, Pulse (the Pulse
+  profiling board, PyAutoBrain#450), Nerves (the Nerves config board,
+  PyAutoNerves#172) and Gut (the Gut board, PyAutoGut#9).
 - **Self-contained, with two exceptions.** `cockpit/index.html` inlines all CSS
   and JS like the hub. `cockpit/manifest.webmanifest` and `cockpit/sw.js` are
   separate files because the web platform requires them to be: a manifest is

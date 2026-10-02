@@ -52,6 +52,11 @@ be integrated with the shell; test full navigation on the shared Pages origin.
   feed (PyAutoNerves#172) — a read-only browser of every config file and option
   across the libraries and workspaces: yellow when a config file does not parse
   or a workspace sets keys no library defines.
+- The Pulse's card reads the [Pulse board](https://pyautolabs.github.io/PyAutoPulse/)
+  feed (PyAutoBrain#450) — the cross-project profiling view over the
+  `<lib>_profiling` projects: it shows what each producer says (drift
+  candidates, refused pairs, failed fetches) and judges nothing; the
+  profiling conductor's `/profiling triage` is the judge.
 
 ### Actionable state and freshness
 
