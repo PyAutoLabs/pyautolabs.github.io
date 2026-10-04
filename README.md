@@ -78,3 +78,5 @@ Run the dependency-free contract/model checks with
 `node --test tests/cockpit-state.cjs`. Browser checks should additionally cover
 mobile/light/dark layout, clipboard, navigation and a selected board remaining
 in place during polling. The runtime still needs no packages or build step.
+
+- Insight reads the [inference campaign board](https://pyautolabs.github.io/PyAutoInsight/) organ feed; project inference feeds remain on their project dashboards.
