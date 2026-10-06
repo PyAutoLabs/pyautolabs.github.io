@@ -130,3 +130,12 @@ Keep source transition notifications distinct from transport failures.
 Tests: `node --test tests/cockpit-state.cjs`; no runtime dependency or build step.
 For future enhancements favour small additions that help a human immediately;
 no speculative agent, bus, permissions engine or automation service.
+
+<!-- repos_sync:standards:begin -->
+## Shared standards
+
+Before changing a shared interface, consult the applicable
+[organism standard](https://github.com/PyAutoLabs/PyAutoBrain/blob/main/docs/standards.md)
+on demand, identify affected consumers, and validate their adoption. Change
+generated guidance at its canonical source and regenerate.
+<!-- repos_sync:standards:end -->
