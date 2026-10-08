@@ -40,7 +40,7 @@ duplicating it.
 `cockpit/` is the organ cockpit — an installable PWA at `/cockpit/` that reads
 each organ's `https://pyautolabs.github.io/<Repo>/state.json` (same origin as
 the page) and renders the Heart strip plus one card per organ in canonical
-order (Brain, Mind, Cortex, Memory, Eyes, Ears, Heart, Hands, Pulse, Insight, Nerves, Gut).
+order (Brain, Mind, Cortex, Memory, Eyes, Ears, Heart, Hands, Pulse, Insight, DNA, Nerves, Gut).
 
 - **Integrated boards:** persistent icon/label navigation selects Overview or a
   board at `/cockpit/#<organ>` (lowercase). A single titled iframe displays only
