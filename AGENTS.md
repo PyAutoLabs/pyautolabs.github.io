@@ -39,10 +39,11 @@ duplicating it.
 
 `cockpit/` is the organ cockpit — an installable PWA at `/cockpit/` that reads
 each organ's `https://pyautolabs.github.io/<Repo>/state.json` (same origin as
-the page) and renders the Heart strip plus one card per organ in canonical
+the page) for shell status and notifications. PyAutoScientist owns the home
+overview cards; the shell embeds that canonical page. Organ tabs retain their
 order (Brain, Mind, Cortex, Broca, Memory, Eyes, Ears, Heart, Hands, Pulse, Insight, DNA, Nerves, Gut).
 
-- **Integrated boards:** persistent icon/label navigation selects Overview or a
+- **Integrated boards:** persistent icon/label navigation selects Scientist (the default PyAutoScientist home) or a
   board at `/cockpit/#<organ>` (lowercase). A single titled iframe displays only
   known organ paths on `https://pyautolabs.github.io`; other destinations remain
   external. Use child `location.replace` when switching so shell routes own
@@ -139,3 +140,9 @@ Before changing a shared interface, consult the applicable
 on demand, identify affected consumers, and validate their adoption. Change
 generated guidance at its canonical source and regenerate.
 <!-- repos_sync:standards:end -->
+
+Scientist is separate from the monitored ORGANS list: it has no synthetic health
+feed and must not aggregate itself. Empty routes and legacy `#overview` resolve
+to `#scientist`. The Scientist repository owns home presentation, polling,
+reporting guidance and the copyable prompt. The shell preserves its frame while
+polling, and retains safe link interception and Back/Forward behavior.

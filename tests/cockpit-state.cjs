@@ -51,15 +51,6 @@ test('expiry uses producer policy and the exact deadline is stale', () => {
 const item = () => ({ severity: 'red', text: 'Nightly failed', id: 'overnight:Example/Engine/nightly.yml',
   state: 'failed', reason: 'GitHub reports failure.', prompt: '/bug nightly',
   actions: [{ id: 'investigate', label: 'Copy investigation prompt', kind: 'prompt', target: '/bug nightly', safety: 'requires_approval' }], recommended_action_id: 'investigate' });
-test('enriched feed validates, renders one copy action and escapes all producer text', () => {
-  const it = item(); it.reason = '<script>alert(1)</script>';
-  const h = harness({ d: { ...legacy(), items: [it] } });
-  assert.equal(h.run('validate(d)'), null);
-  const rendered = h.run('itemsHtml(d.items)');
-  assert.equal((rendered.match(/data-cmd=/g) || []).length, 1);
-  assert.match(rendered, /Approval required/); assert.match(rendered, /&lt;script&gt;/);
-  assert.doesNotMatch(rendered, /<script>/);
-});
 test('bad action metadata, unsafe links, duplicated IDs and wrong organ are rejected', () => {
   for (const change of [it => it.actions[0].safety = true, it => it.actions[0].kind = 'shell',
     it => it.actions.push(it.actions[0]), it => it.recommended_action_id = 'missing',
@@ -69,14 +60,6 @@ test('bad action metadata, unsafe links, duplicated IDs and wrong organ are reje
     assert.ok(harness({ d: { ...legacy(), items: [it] } }).run('validate(d)'));
   }
   assert.match(harness({ d: { ...legacy(), repo: 'Other' } }).run('validate(d, ORGANS[0])'), /wrong organ/);
-});
-test('explicit decisions are visible, including unclassified action safety', () => {
-  const it = item(); it.requires_human_decision = true; it.decision = 'Which strategy?';
-  delete it.actions[0].safety;
-  const h = harness({ d: { ...legacy(), items: [it] } });
-  assert.equal(h.run('validate(d)'), null);
-  assert.match(h.run('itemsHtml(d.items)'), /Your decision:.*Which strategy/);
-  assert.match(h.run('itemsHtml(d.items)'), /Safety unclassified/);
 });
 test('malformed persisted data cannot crash fetch; failed fetch then recovery updates the observation', async () => {
   let fail = true;
@@ -95,7 +78,7 @@ test('a source with insufficient evidence cannot claim nothing needs attention',
   const d = { ...legacy(), status: 'grey' };
   assert.equal(view({ feed: d }).current, false);
   assert.match(view({ feed: d }).reason, /insufficient evidence/);
-  assert.doesNotMatch(harness().run('itemsHtml([], false)'), /nothing needs you/);
+  assert.equal(view({ feed: legacy(), error: 'offline' }).current, false);
 });
 
 test('transport errors do not emit source transitions; genuine stale and recovery transitions still do', () => {
@@ -111,4 +94,14 @@ test('transport errors do not emit source transitions; genuine stale and recover
   assert.equal(notices.length, 1);
   h.run('state.Brain = { feed: d }; detectTransitions()');
   assert.equal(notices.length, 2);
+});
+
+test('Scientist is a distinct home board and legacy Overview routes resolve to it', () => {
+  const h=harness();
+  vm.runInContext(script.slice(script.indexOf('// ---- one-window board navigation ----'), script.indexOf('function setRoute(')), h.ctx);
+  assert.equal(h.run('routeHash(null)'), '#scientist');
+  assert.equal(h.run('organAt(BASE + "PyAutoScientist/").organ'), 'Scientist');
+  assert.equal(h.run('ORGANS.some(o => o.organ === "Scientist")'), false);
+  assert.equal(h.run('organAt("https://evil.test/PyAutoScientist/")'), null);
+  assert.ok(!html.includes('<main id="overview"'));
 });
