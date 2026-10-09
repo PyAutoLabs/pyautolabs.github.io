@@ -25,7 +25,7 @@ local notification when any organ's status changes. No server, no secrets: the
 feeds are the truth.
 
 Choose an organ from the icon-and-label bar to open its board inside the cockpit.
-**Overview** returns to the status cards. Board selections have bookmarkable URLs
+**Scientist** returns to the status cards. Board selections have bookmarkable URLs
 (for example `/cockpit/#heart`), and browser Back/Forward follows those selections.
 The bar scrolls horizontally on phones; landscape mode makes it more compact.
 Reload refreshes the selected board, while **New tab** explicitly opens it separately.
@@ -61,18 +61,15 @@ be integrated with the shell; test full navigation on the shared Pages origin.
 ### Actionable state and freshness
 
 The cockpit remains a human interface over the organs' shared `state.json`
-feeds. Brain's optional v1 metadata adds reasons, labelled actions and explicit
-human decisions. It renders old and enriched feeds together. Actions link to
-evidence or copy existing commands/prompts; viewing a problem never executes
-its remedy. Approval and scientific-judgement labels describe the source's
-constraints, and missing safety information is unclassified.
+feeds. Scientist selects concise summaries from old and enriched feeds; links
+lead to the owning evidence and boards. The work panel copies a prompt, and
+viewing a problem never executes its remedy.
 
-Cards distinguish feed generation from the browser's last check. Failed fetches
-show last-known results as stale, keeping previous failures visible. Invalid or
-future timestamps cannot show current green. Producer-declared `valid_until`
-deadlines are respected; without one the cockpit displays the age and invents
-no expiry interval. Source verdicts, transport failure and freshness stay
-separate. No persistent agent or new notification service is included.
+Scientist cards label source timestamps and retain last-known evidence when
+fetching fails. Invalid or future timestamps cannot show current green.
+Producer-declared `valid_until` deadlines are respected; without one, source
+age is displayed without inventing an expiry interval. Source verdicts,
+transport failure and freshness stay separate.
 
 Run the dependency-free contract/model checks with
 `node --test tests/cockpit-state.cjs`. Browser checks should additionally cover
@@ -80,3 +77,8 @@ mobile/light/dark layout, clipboard, navigation and a selected board remaining
 in place during polling. The runtime still needs no packages or build step.
 
 - Insight reads the [inference campaign board](https://pyautolabs.github.io/PyAutoInsight/) organ feed; project inference feeds remain on their project dashboards.
+
+The first cockpit tab embeds the canonical PyAutoScientist dashboard: its
+banner, work prompt and compact organ disclosures. Old `#overview` links still
+open this Scientist home. Ask the Scientist for a summary over the last 24 hours
+or another period; historical evidence stays with the owning organs.
